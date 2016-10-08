@@ -23,7 +23,6 @@ extern crate byteorder;
 
 use std::result;
 use std::io;
-use std::rc::Rc;
 use std::io::{Cursor, Write, Seek, SeekFrom, Error};
 use byteorder::{WriteBytesExt, ReadBytesExt, LittleEndian};
 use std::collections::HashMap;
@@ -745,7 +744,7 @@ struct CurrentPageValues {
 	/// Points to the first unwritten position in cur_pg_lacing.
 	segment_cnt :u8,
 	cur_pg_lacing :[u8; 255],
-	cur_pg_data :Vec<Rc<[u8]>>,
+	cur_pg_data :Vec<Vec<u8>>,
 
 	/// Some(offs), if the last packet
 	/// couldn't make it fully into this page, and
@@ -801,7 +800,7 @@ impl <T :io::Write> PacketWriter<T> {
 	/// Write a packet
 	///
 	///
-	pub fn write_packet(&mut self, pck_cont :Rc<[u8]>, serial :u32,
+	pub fn write_packet(&mut self, pck_cont :&[u8], serial :u32,
 			inf :PacketWriteEndInfo,
 			/* TODO find a better way to design the API around
 				passing the absgp to the underlying implementation.
@@ -823,7 +822,7 @@ impl <T :io::Write> PacketWriter<T> {
 			}
 		);
 
-		pg.cur_pg_data.push(pck_cont.clone());
+		pg.cur_pg_data.push(pck_cont.to_vec());
 
 		let last_data_segment_size = (pck_cont.len() % 255) as u8;
 		let needed_segments :usize = (pck_cont.len() / 255) + 1;
